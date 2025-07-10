@@ -1,0 +1,10 @@
+[package]
+name = "ascii_gif_player"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+image = "0.25"
+# You might need 'imageproc' if you go for more complex image processing,
+# but for basic contrast as implemented, it's not strictly necessary.
+# imageproc = "0.23"
