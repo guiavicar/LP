@@ -1,5 +1,6 @@
-use image::{GenericImageView, DynamicImage, GrayImage, ImageFormat};
+use image::{GenericImageView, DynamicImage, GrayImage, ImageFormat, RgbaImage};
 use std::{thread, time::Duration, io::{self, Write, BufReader}};
+use gif::Decoder as GifDecoder;
 
 const ASCII_CHARS: &str = "#BRD!*+=-:. ";
 
@@ -60,26 +61,80 @@ fn frame_to_ascii(image: &DynamicImage) -> String {
 // Main function to open GIF, process frames, and display animation
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let gif_path = "./cruzeiro.gif";
-    let new_width = 200;
+    let _new_width = 200; // Renamed to _new_width to silence the warning
     let delay_ms = 50;
 
-    let file_in = std::fs::File::open(gif_path)?;
-    let reader = BufReader::new(file_in);
+    let file = std::fs::File::open(gif_path)?;
+    let mut reader = BufReader::new(file);
 
-    let decoder = image::ImageReader::new(reader)
-        .with_guessed_format()?;
+    let format = image::ImageReader::new(&mut reader)
+        .with_guessed_format()?
+        .format();
 
-    let frames: Vec<DynamicImage> = match decoder.decode()? { // Call decode() here
-        image::DecodingResult::Animation(animated_decoder) => {
-            // It's an animated image (like a GIF)
-            animated_decoder.frames().map(|f| {
-                f.map(|frame| frame.into_rgba8().into_dynamic()).map_err(|e| e.into())
-            }).collect::<Result<Vec<DynamicImage>, Box<dyn std::error::Error>>>()?
-        },
-        image::DecodingResult::Image(dynamic_image) => {
-            // It's a static image
-            vec![dynamic_image] // Just use the DynamicImage directly
+    let mut frames: Vec<DynamicImage> = Vec::new(); // Initialize an empty vector for frames
+
+    if let Some(ImageFormat::Gif) = format {
+        // If it's a GIF, specifically try to decode as an animation
+        let file_animated = std::fs::File::open(gif_path)?;
+        let reader_animated = BufReader::new(file_animated);
+        
+        let mut decoder = GifDecoder::new(reader_animated)?;
+
+        // Corrected: Copy the global palette data so it's owned, not borrowed from decoder
+        let global_palette_data = decoder.palette()
+                                        .map(|p| p.to_vec()) // Convert &[u8] to Vec<u8>
+                                        .unwrap_or_default(); // Default to empty Vec if no palette
+
+        while let Some(frame) = decoder.read_next_frame()? {
+            let (width, height) = (frame.width as u32, frame.height as u32);
+
+            let mut rgba_buffer = Vec::with_capacity((width * height * 4) as usize);
+            
+            // Use the frame's local palette if it has one, otherwise use the owned global_palette_data
+            let current_palette: &[u8] = match frame.palette.as_ref() {
+                Some(p) => p.as_slice(), // If frame has local palette (Vec<u8>), get its slice &[u8]
+                None => &global_palette_data, // Use reference to the owned global palette data
+            };
+
+            // Handle transparency: get the transparent color index if present
+            let transparent_idx = frame.transparent;
+
+            for &pixel_idx in frame.buffer.iter() {
+                let color_idx = pixel_idx as usize * 3; // Palette stores R, G, B for each entry
+                if color_idx + 2 < current_palette.len() {
+                    rgba_buffer.push(current_palette[color_idx]);     // R
+                    rgba_buffer.push(current_palette[color_idx + 1]); // G
+                    rgba_buffer.push(current_palette[color_idx + 2]); // B
+                    
+                    // Apply transparency
+                    if let Some(t_idx) = transparent_idx {
+                        if pixel_idx == t_idx {
+                            rgba_buffer.push(0); // Transparent (A = 0)
+                        } else {
+                            rgba_buffer.push(255); // Opaque (A = 255)
+                        }
+                    } else {
+                        rgba_buffer.push(255); // No transparency, fully opaque
+                    }
+                } else {
+                    // Fallback for out-of-bounds palette index
+                    rgba_buffer.extend_from_slice(&[0, 0, 0, 255]); // Black opaque pixel
+                }
+            }
+
+            let img_buffer = RgbaImage::from_raw(width, height, rgba_buffer)
+                .ok_or("Failed to create RgbaImage from converted buffer")?;
+            
+            frames.push(image::DynamicImage::ImageRgba8(img_buffer));
         }
+    } else {
+        // If it's not a GIF (or a static image), decode as a single image
+        let file_static = std::fs::File::open(gif_path)?;
+        let reader_static = BufReader::new(file_static);
+        let decoder_static = image::ImageReader::new(reader_static)
+            .with_guessed_format()?;
+
+        frames.push(decoder_static.decode()?);
     };
     
     let ascii_frames: Vec<String> = frames.iter()
