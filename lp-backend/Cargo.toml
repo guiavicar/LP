@@ -7,3 +7,6 @@ edition = "2021"
 image = "0.25"
 gif = "0.12" #
 actix-web = "4"
+actix-cors = "0.7"
+actix-multipart = "0.7"
+futures-util = "0.3"
