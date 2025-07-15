@@ -130,18 +130,20 @@ body,
 }
 
 /* Dropzone maior */
-.modal-convert .dropzone {
+.modal-convert .controls-container {
   width: 100%;
-  min-height: 80%;
-  padding: 4rem;
+  min-height: 200px; /* Reduzimos a altura mínima para dar espaço ao resultado */
+  padding: 2rem;
   border: 2px dashed var(--accent2);
   border-radius: 0.75rem;
   margin: 1.5rem 0;
   display: flex;
+  flex-direction: column; /* Organiza os itens em coluna */
   align-items: center;
   justify-content: center;
+  gap: 25px; /* Espaço entre os controles */
   font-size: 1rem;
-  color: var(--accent2);
+  color: grey;
 }
 
 /* Container dos botões de ação */
@@ -266,6 +268,59 @@ body,
   /* background: rgba(255,255,255,0.2); */
   background: rgb(60, 58, 58);
   border-radius: 3px;
+}
+
+.slider {
+  width: 80%;
+  max-width: 400px;
+}
+
+.result-area {
+  margin: 1.5rem 0;
+  width: 100%;
+}
+
+.ascii-container {
+  width: 100%;
+  height: 65vh; /* Altura para ocupar o espaço do modal */
+  margin: 0 auto;
+  background-color: #000;
+  border: 1px solid #555;
+  border-radius: 8px;
+  overflow: auto; /* Rolagem em ambas as direções se necessário */
+  text-align: left;
+}
+
+.ascii-container pre {
+  color: #E0E0E0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px; /* A mágica do "zoom" */
+  line-height: 0.9;
+  padding: 1rem;
+}
+
+/* --- Estilos Bônus para os Controles (opcional, ajuste como quiser) --- */
+.controls-area {
+  margin: 30px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px; /* Espaço entre os controles */
+}
+
+.control-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: grey;
+  font-weight: bold;
+}
+
+.convert-button {
+  padding: 12px 25px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 
