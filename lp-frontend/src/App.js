@@ -83,8 +83,10 @@ function App() {
           {isLoading ? 'Convertendo...' : 'Converter'}
         </button>
 
-        <h2>Resultado:</h2>
-        <pre>{asciiArt}</pre>
+        <h2>CONTEMPLE:</h2>
+        <div className="ascii-container">
+          <pre>{asciiArt}</pre>
+        </div>
       </header>
     </div>
   );
