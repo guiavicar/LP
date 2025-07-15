@@ -1,13 +1,13 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Responder, Error};
+
+// 1. "Responder" foi removido daqui, pois não era mais usado.
+use actix_web::{web, App, HttpResponse, HttpServer, Error}; 
 use actix_cors::Cors;
 use actix_multipart::Multipart;
 use futures_util::stream::StreamExt;
-use image::{GenericImageView, DynamicImage, GrayImage, ImageFormat, RgbaImage};
+use image::{GenericImageView, DynamicImage, GrayImage};
+use std::str::FromStr;
 
-// =========================================================================
-// === SUAS FUNÇÕES DE PROCESSAMENTO DE IMAGEM (COPIADAS DO CÓDIGO ANTIGO) ===
-// =========================================================================
-
+// --- SUAS FUNÇÕES DE PROCESSAMENTO DE IMAGEM (sem alterações) ---
 const ASCII_CHARS: &str = "#BRD!*+=-:. ";
 
 fn resize_image(image: &DynamicImage, new_width: u32) -> DynamicImage {
@@ -43,9 +43,9 @@ fn pixels_to_ascii(image: &GrayImage) -> String {
     ascii_str
 }
 
-fn frame_to_ascii(image: &DynamicImage) -> String {
+fn frame_to_ascii(image: &DynamicImage, new_width: u32) -> String {
     let image_contrasted = adjust_contrast(image, 1.8);
-    let image_resized = resize_image(&image_contrasted, 200);
+    let image_resized = resize_image(&image_contrasted, new_width);
     let image_gray = grayify_image(&image_resized);
     let ascii_str = pixels_to_ascii(&image_gray);
     let img_width = image_gray.width() as usize;
@@ -59,60 +59,62 @@ fn frame_to_ascii(image: &DynamicImage) -> String {
         .join("\n")
 }
 
-// =========================================================================
-// === NOVO HANDLER PARA UPLOAD E CONVERSÃO REAL ===
-// =========================================================================
-
+// --- HANDLER QUE RECEBE O UPLOAD (com a correção) ---
 async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut image_data = Vec::new();
+    let mut width_str = String::from("200");
 
-    // Itera sobre os "campos" do formulário enviado (no nosso caso, só o campo 'image')
     while let Some(item) = payload.next().await {
         let mut field = item?;
         
-        // Coleta os bytes do campo em um stream
+        // --- INÍCIO DA CORREÇÃO ---
+        // Pegamos o nome do campo de forma segura, tratando o 'Option'.
+        let field_name = match field.content_disposition() {
+            Some(cd) => cd.get_name().unwrap_or("").to_string(),
+            None => "".to_string(),
+        };
+        // --- FIM DA CORREÇÃO ---
+
+        let mut field_data = Vec::new();
         while let Some(chunk) = field.next().await {
-            image_data.extend_from_slice(&chunk?);
+            field_data.extend_from_slice(&chunk?);
+        }
+
+        // Usamos o nome do campo que acabamos de extrair
+        if field_name == "image" {
+            image_data = field_data;
+        } else if field_name == "width" {
+            if let Ok(s) = String::from_utf8(field_data) {
+                width_str = s;
+            }
         }
     }
 
-    if image_data.is_empty() {
-        return Ok(HttpResponse::BadRequest().body("Nenhum arquivo enviado."));
-    }
+    let ascii_width = u32::from_str(&width_str).unwrap_or(200);
 
-    // Tenta carregar a imagem a partir dos bytes recebidos
+    if image_data.is_empty() { return Ok(HttpResponse::BadRequest().body("Nenhum arquivo enviado.")); }
+
     match image::load_from_memory(&image_data) {
         Ok(dynamic_image) => {
-            // Se der certo, chama sua função de conversão!
-            let ascii_art = frame_to_ascii(&dynamic_image);
-            // E devolve a arte ASCII como resposta
+            let ascii_art = frame_to_ascii(&dynamic_image, ascii_width);
             Ok(HttpResponse::Ok().content_type("text/plain").body(ascii_art))
         }
-        Err(_) => {
-            // Se não for uma imagem válida
-            Ok(HttpResponse::BadRequest().body("Formato de arquivo inválido."))
-        }
+        Err(_) => Ok(HttpResponse::BadRequest().body("Formato de arquivo inválido.")),
     }
 }
 
-// =========================================================================
-// === FUNÇÃO MAIN ATUALIZADA ===
-// =========================================================================
-
+// --- FUNÇÃO MAIN (sem alterações) ---
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("🚀 Servidor backend rodando em http://127.0.0.1:8080");
-
     HttpServer::new(|| {
         let cors = Cors::default()
               .allowed_origin("http://localhost:3000")
               .allowed_methods(vec!["GET", "POST"])
               .allow_any_header()
               .max_age(3600);
-
         App::new()
             .wrap(cors)
-            // IMPORTANTE: A rota agora aceita POST e chama a nova função `convert_real`
             .route("/api/convert", web::post().to(convert_real))
     })
     .bind(("127.0.0.1", 8080))?
