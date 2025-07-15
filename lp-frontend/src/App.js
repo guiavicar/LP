@@ -1,91 +1,144 @@
 import React, { useState } from 'react';
+import Modal from 'react-modal';
+import { useDropzone } from 'react-dropzone';
+import { projectInfo } from './data/projectInfo';
 import './App.css';
 
+Modal.setAppElement('#root');
+
 function App() {
-  // --- Novos Estados ---
-  // 'selectedFile' vai guardar o arquivo que o usuário escolheu. Começa como nulo.
-  const [selectedFile, setSelectedFile] = useState(null);
-  // 'asciiArt' continua guardando o resultado.
-  const [asciiArt, setAsciiArt] = useState('');
-  // 'isLoading' para mostrar um feedback ao usuário enquanto a conversão acontece.
-  const [isLoading, setIsLoading] = useState(false);
+  const [file, setFile] = useState(null);
+  const [ascii, setAscii] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isConvOpen, setConvOpen] = useState(false);
+  const [isInfoOpen, setInfoOpen] = useState(false);
 
-  // --- Novas Funções ---
-
-  // Esta função é chamada QUANDO o usuário seleciona um arquivo no input.
-  const handleFileChange = (event) => {
-    // Pegamos o primeiro arquivo da lista de arquivos selecionados.
-    const file = event.target.files[0];
-    if (file) {
-      console.log('Arquivo selecionado:', file.name);
-      setSelectedFile(file);
-      setAsciiArt(''); // Limpa a arte anterior ao selecionar um novo arquivo
-    }
+  const handleDrop = (accepted) => {
+    setFile(accepted[0]);
+    setAscii('');
   };
 
-  // Esta função é chamada QUANDO o usuário clica no botão "Converter".
-  const handleUpload = () => {
-    // Verificamos se um arquivo foi realmente selecionado.
-    if (!selectedFile) {
-      alert('Por favor, selecione um arquivo primeiro!');
-      return;
-    }
+  const {
+    getRootProps,
+    getInputProps
+  } = useDropzone({
+    onDrop: handleDrop,
+    accept: 'image/*'
+  });
 
-    console.log('Iniciando upload...');
-    setIsLoading(true); // Ativa o estado de "carregando"
-
-    // 'FormData' é um objeto especial para empacotar dados de formulário,
-    // incluindo arquivos, para serem enviados em uma requisição.
-    const formData = new FormData();
-    // Adicionamos nosso arquivo ao FormData. A chave 'image' é importante,
-    // pois o backend vai procurar por um campo com este nome.
-    formData.append('image', selectedFile);
-
-    // O 'fetch' agora é do tipo 'POST' e envia o 'formData' no corpo.
-    fetch('http://127.0.0.1:8080/api/convert', {
-      method: 'POST',
-      body: formData,
-      // **Importante:** Não defina o 'Content-Type' aqui! O navegador
-      // fará isso automaticamente com o 'boundary' correto para multipart/form-data.
-    })
-    .then(response => response.text())
-    .then(data => {
-      console.log('Arte ASCII recebida!');
-      setAsciiArt(data); // Mostra o resultado
-    })
-    .catch(error => {
-      console.error('Erro no upload:', error);
-      alert('Ocorreu um erro ao enviar a imagem.');
-    })
-    .finally(() => {
-      setIsLoading(false); // Desativa o estado de "carregando", com sucesso ou erro
-    });
+  const handleConvert = () => {
+    if (!file) return alert('Selecione um arquivo!');
+    setLoading(true);
+    const fd = new FormData();
+    fd.append('image', file);
+    fetch('http://127.0.0.1:8080/api/convert', { method: 'POST', body: fd })
+      .then(res => res.text())
+      .then(txt => setAscii(txt))
+      .catch(() => alert('Erro no servidor'))
+      .finally(() => {
+        setLoading(false);
+        setAscii('');
+        setFile(null);
+      });
   };
 
-  // --- A Aparência do Componente (JSX) ---
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>Conversor para Arte ASCII</h1>
-        
-        {/* Input para o usuário escolher o arquivo.
-            Aceita apenas os formatos de imagem mais comuns.
-            Ao mudar, chama 'handleFileChange'. */}
-        <input 
-          type="file" 
-          onChange={handleFileChange} 
-          accept="image/png, image/jpeg, image/gif"
-        />
+      <h1 className="title">Meu Conversor de Arte ASCII</h1>
 
-        {/* Botão para iniciar a conversão.
-            Ele fica desabilitado se não houver arquivo selecionado ou se estiver carregando. */}
-        <button onClick={handleUpload} disabled={!selectedFile || isLoading}>
-          {isLoading ? 'Convertendo...' : 'Converter'}
+      <div className="buttons">
+        <button
+          className="btn btn-convert"
+          onClick={() => setConvOpen(true)}
+        >
+          Converter
+        </button>
+        <button
+          className="btn btn-info-btn"
+          onClick={() => setInfoOpen(true)}
+        >
+          Info
+        </button>
+      </div>
+
+      {/* Modal de Conversão */}
+      <Modal
+        isOpen={isConvOpen}
+        onRequestClose={() => setConvOpen(false)}
+        className="modal modal-convert"
+        overlayClassName="overlay"
+      >
+        {/* Botão fechar */}
+        <button className="modal-close" onClick={() => setConvOpen(false)}>
+          &times;
         </button>
 
-        <h2>Resultado:</h2>
-        <pre>{asciiArt}</pre>
-      </header>
+        <h2 className="modal-convert-title">Arraste sua imagem ou GIF aqui</h2>
+
+        <div {...getRootProps()} className="dropzone">
+          <input {...getInputProps()} />
+          {file ? file.name : 'Arraste ou clique para selecionar'}
+        </div>
+
+        <div className="modal-actions">
+
+          {/* Botão de ação Limpar */}
+          <button
+            className="btn-clear"
+            onClick={() => {
+              setFile(null);
+              setAscii('');
+            }}
+            disabled={!file}
+          >
+            Limpar
+            <i className="material-icons" style={{ marginRight: '0.3rem' }}>
+              delete
+            </i>
+          </button>
+
+          {/* Botão de ação Converter */}
+          <button
+            className="btn-convert"
+            onClick={handleConvert}
+            disabled={loading || !file}
+          >
+            {loading ? 'Convertendo...' : 'Converter'}
+            <i className="material-icons" style={{ marginRight: '0.3rem' }}>
+              send
+            </i>
+          </button>
+        </div>
+
+        {/* Resultado ASCII */}
+        {ascii && <pre className="ascii-output">{ascii}</pre>}
+      </Modal>
+
+      {/* Modal de Informações do Projeto */}
+      <Modal
+        isOpen={isInfoOpen}
+        onRequestClose={() => setInfoOpen(false)}
+        className="modal info"
+        overlayClassName="overlay"
+      >
+        <h2 className="modal-info-title">Sobre o Projeto</h2>
+        <div className="info-content">
+          {projectInfo.description.trim().split('\n\n').map((par, i) => (
+            <p key={i}>{par}</p>
+          ))}
+
+          {/* video Informativo */}
+          <iframe
+            title="Vídeo do Projeto"
+            width="100%"
+            height="240"
+            src={projectInfo.videoUrl}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="info-video"
+          />
+        </div>
+      </Modal>
     </div>
   );
 }
