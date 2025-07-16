@@ -1,24 +1,23 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Responder, Error};
+use actix_web::{web, App, HttpResponse, HttpServer, Error};
 use actix_cors::Cors;
 use actix_multipart::Multipart;
 use futures_util::stream::StreamExt;
-use image::{GenericImageView, DynamicImage, GrayImage, ImageFormat, RgbaImage};
+use image::{GenericImageView, DynamicImage, GrayImage};
 
-// =========================================================================
-// === SUAS FUNÇÕES DE PROCESSAMENTO DE IMAGEM (COPIADAS DO CÓDIGO ANTIGO) ===
-// =========================================================================
+// caracteres ASCII
+const ASCII_CHARS: &str = "@#WM&8%B$0QOZCLJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,^. ";
 
-const ASCII_CHARS: &str = "#BRD!*+=-:. ";
-
+// redimensionamento da imagem original
 fn resize_image(image: &DynamicImage, new_width: u32) -> DynamicImage {
     let (width, height) = image.dimensions();
-    let ratio = (height as f32 / width as f32) / 1.65;
+    let ratio = (height as f32 / width as f32) / 1.65; // achatar a imagem
     let new_height = (new_width as f32 * ratio) as u32;
-    image.resize_exact(new_width, new_height, image::imageops::FilterType::Lanczos3)
+    image.resize_exact(new_width, new_height, image::imageops::FilterType::Lanczos3) //novas medidas
 }
 
+// contraste para a imagem ficar mais visivel
 fn adjust_contrast(image: &DynamicImage, factor: f32) -> DynamicImage {
-    let mut img = image.to_rgba8();
+    let mut img: image::ImageBuffer<image::Rgba<u8>, Vec<u8>> = image.to_rgba8();
     for pixel in img.pixels_mut() {
         for i in 0..3 {
             let val = pixel[i] as f32;
@@ -28,7 +27,7 @@ fn adjust_contrast(image: &DynamicImage, factor: f32) -> DynamicImage {
     }
     DynamicImage::ImageRgba8(img)
 }
-
+//transforma a imagem em preto e branco
 fn grayify_image(image: &DynamicImage) -> GrayImage {
     image.to_luma8()
 }
@@ -37,20 +36,20 @@ fn pixels_to_ascii(image: &GrayImage) -> String {
     let mut ascii_str = String::with_capacity((image.width() * image.height()) as usize);
     for pixel in image.pixels() {
         let intensity = pixel[0];
-        let char_index = (intensity as usize * (ASCII_CHARS.len() - 1)) / 255;
+        let char_index: usize = (intensity as usize * (ASCII_CHARS.len() - 1)) / 255; //busca na string ascii qual o correspondente do indice de iluminosidade
         ascii_str.push(ASCII_CHARS.chars().nth(char_index).unwrap());
     }
     ascii_str
 }
 
 fn frame_to_ascii(image: &DynamicImage) -> String {
-    let image_contrasted = adjust_contrast(image, 1.8);
-    let image_resized = resize_image(&image_contrasted, 200);
-    let image_gray = grayify_image(&image_resized);
-    let ascii_str = pixels_to_ascii(&image_gray);
+    let image_contrasted = adjust_contrast(image, 1.8);//determina o contraste com um fator de sombra
+    let image_resized = resize_image(&image_contrasted, 200); // nova largura fixa 
+    let image_gray = grayify_image(&image_resized);// deixa a imagem preto e branco
+    let ascii_str = pixels_to_ascii(&image_gray);//analisa os pixel para transformar em ascii
     let img_width = image_gray.width() as usize;
 
-    ascii_str
+    ascii_str //transforma em chunks, adiciona as quebras de linha e reconstroi a imagem
         .chars()
         .collect::<Vec<char>>()
         .chunks(img_width)
@@ -59,9 +58,6 @@ fn frame_to_ascii(image: &DynamicImage) -> String {
         .join("\n")
 }
 
-// =========================================================================
-// === NOVO HANDLER PARA UPLOAD E CONVERSÃO REAL ===
-// =========================================================================
 
 async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut image_data = Vec::new();
@@ -83,7 +79,7 @@ async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
     // Tenta carregar a imagem a partir dos bytes recebidos
     match image::load_from_memory(&image_data) {
         Ok(dynamic_image) => {
-            // Se der certo, chama sua função de conversão!
+            // Se der certo, chama sua função de convers
             let ascii_art = frame_to_ascii(&dynamic_image);
             // E devolve a arte ASCII como resposta
             Ok(HttpResponse::Ok().content_type("text/plain").body(ascii_art))
@@ -94,10 +90,6 @@ async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
         }
     }
 }
-
-// =========================================================================
-// === FUNÇÃO MAIN ATUALIZADA ===
-// =========================================================================
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -112,7 +104,6 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(cors)
-            // IMPORTANTE: A rota agora aceita POST e chama a nova função `convert_real`
             .route("/api/convert", web::post().to(convert_real))
     })
     .bind(("127.0.0.1", 8080))?
