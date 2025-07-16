@@ -33,6 +33,6 @@ export const projectInfo = {
     o Rust devolve texto, e o React mostra instantaneamente a imagem convertida em caracteres, 
     tudo num ambiente leve e fácil de entender. 
     `,
-    videoUrl: 'https://youtu.be/X874raPe-_4',
+    videoUrl: 'https://www.youtube-nocookie.com/embed/X874raPe-_4',
     repoUrl: 'https://github.com/guiavicar/LP'
 };
