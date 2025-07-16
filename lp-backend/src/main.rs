@@ -1,14 +1,18 @@
 
 // 1. "Responder" foi removido daqui, pois não era mais usado.
-use actix_web::{web, App, HttpResponse, HttpServer, Error}; 
+use actix_web::{web, App, HttpResponse, HttpServer, Error};
 use actix_cors::Cors;
 use actix_multipart::Multipart;
 use futures_util::stream::StreamExt;
-use image::{GenericImageView, DynamicImage, GrayImage};
-use std::str::FromStr;
+use image::{GenericImageView, DynamicImage, GrayImage, ImageFormat, RgbaImage};
+use std::{str::FromStr, io::Cursor};
+use bytes::Bytes;
+use tokio::sync::mpsc;
+use tokio::time::{sleep, Duration};
+use tokio_stream::wrappers::ReceiverStream;
 
 // --- SUAS FUNÇÕES DE PROCESSAMENTO DE IMAGEM (sem alterações) ---
-const ASCII_CHARS: &str = "#BRD!*+=-:. ";
+const ASCII_CHARS: &str = " .:-=+*!DRB#";
 
 fn resize_image(image: &DynamicImage, new_width: u32) -> DynamicImage {
     let (width, height) = image.dimensions();
@@ -66,40 +70,72 @@ async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
     while let Some(item) = payload.next().await {
         let mut field = item?;
-        
-        // --- INÍCIO DA CORREÇÃO ---
-        // Pegamos o nome do campo de forma segura, tratando o 'Option'.
         let field_name = match field.content_disposition() {
             Some(cd) => cd.get_name().unwrap_or("").to_string(),
             None => "".to_string(),
         };
-        // --- FIM DA CORREÇÃO ---
-
         let mut field_data = Vec::new();
         while let Some(chunk) = field.next().await {
             field_data.extend_from_slice(&chunk?);
         }
-
-        // Usamos o nome do campo que acabamos de extrair
-        if field_name == "image" {
-            image_data = field_data;
-        } else if field_name == "width" {
-            if let Ok(s) = String::from_utf8(field_data) {
-                width_str = s;
-            }
+        if field_name == "image" { image_data = field_data; }
+        else if field_name == "width" {
+            if let Ok(s) = String::from_utf8(field_data) { width_str = s; }
         }
     }
 
     let ascii_width = u32::from_str(&width_str).unwrap_or(200);
-
     if image_data.is_empty() { return Ok(HttpResponse::BadRequest().body("Nenhum arquivo enviado.")); }
 
-    match image::load_from_memory(&image_data) {
-        Ok(dynamic_image) => {
-            let ascii_art = frame_to_ascii(&dynamic_image, ascii_width);
-            Ok(HttpResponse::Ok().content_type("text/plain").body(ascii_art))
+    let image_format = image::guess_format(&image_data).unwrap_or(ImageFormat::Png);
+
+    if image_format == ImageFormat::Gif {
+        // --- INÍCIO DA CORREÇÃO 2 (Type Mismatch) ---
+        // O canal agora envia um Result, como o Actix espera.
+        let (tx, rx) = mpsc::channel::<Result<Bytes, Error>>(10);
+        let stream = ReceiverStream::new(rx);
+
+        actix_web::rt::spawn(async move {
+            let cursor = Cursor::new(image_data);
+            if let Ok(mut decoder) = gif::Decoder::new(cursor) {
+                
+                // --- INÍCIO DA CORREÇÃO 1 (Iterator) ---
+                // Trocamos o 'for' loop pelo 'while let' correto para a biblioteca gif.
+                while let Ok(Some(frame)) = decoder.read_next_frame() {
+                    let delay = Duration::from_millis(frame.delay as u64 * 10);
+                    
+                    // A conversão do frame para RGBA precisa ser feita com cuidado
+                    if let Some(rgba_image) = RgbaImage::from_raw(frame.width as u32, frame.height as u32, frame.buffer.clone().into_owned()) {
+                        let dynamic_image = DynamicImage::ImageRgba8(rgba_image);
+                        let ascii_frame = frame_to_ascii(&dynamic_image, ascii_width);
+                        
+                        let sse_message = format!("data: {}\n\n", serde_json::to_string(&ascii_frame).unwrap());
+                        
+                        // Enviamos o resultado encapsulado em Ok()
+                        if tx.send(Ok(Bytes::from(sse_message))).await.is_err() {
+                            break;
+                        }
+                    }
+                    sleep(delay).await;
+                }
+                // --- FIM DA CORREÇÃO 1 ---
+            }
+            let _ = tx.send(Ok(Bytes::from("event: end\ndata: done\n\n"))).await;
+        });
+
+        Ok(HttpResponse::Ok()
+            .content_type("text/event-stream")
+            .keep_alive()
+            .streaming(stream))
+
+    } else {
+        match image::load_from_memory(&image_data) {
+            Ok(dynamic_image) => {
+                let ascii_art = frame_to_ascii(&dynamic_image, ascii_width);
+                Ok(HttpResponse::Ok().content_type("text/plain").body(ascii_art))
+            }
+            Err(_) => Ok(HttpResponse::BadRequest().body("Formato de arquivo inválido.")),
         }
-        Err(_) => Ok(HttpResponse::BadRequest().body("Formato de arquivo inválido.")),
     }
 }
 
