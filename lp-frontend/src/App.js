@@ -1,10 +1,30 @@
-// Conteúdo final e completo para: lp-frontend/src/App.js
+import React, { useState } from 'react';
+import Modal from 'react-modal';
+import { participants } from './data/participants';
+import { projectInfo } from './data/projectInfo';
+import './App.css';
 
-import React, { useState, useRef, useEffect } from 'react';
-import './App.css'; 
+const Footer = () => {
+  return (
+    <footer className="footer">
+      <div className="participants">
+        {participants.map(p => (
+          <div key={p.matricula} className="participant">
+            <span className="name">{p.name}</span>
+            <span className="matricula">{p.matricula}</span>
+          </div>
+        ))}
+      </div>
+      <div className="repo-link">
+        <a href={projectInfo.repoUrl} target="_blank" rel="noopener noreferrer">
+          Repositório do Projeto
+        </a>
+      </div>
+    </footer>
+  );
+};
 
 function App() {
-  // --- Estados da UI e da Funcionalidade ---
   const [isConvOpen, setConvOpen] = useState(false);
   const [isInfoOpen, setInfoOpen] = useState(false);
   const [file, setFile] = useState(null);
@@ -12,7 +32,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [width, setWidth] = useState(200);
 
-  // --- Função para lidar com a seleção do arquivo ---
+  // --- Lidar com a seleção do arquivo ---
   const handleFileChange = (event) => {
     const selected = event.target.files[0];
     if (selected) {
@@ -21,21 +41,20 @@ function App() {
     }
   };
 
-  // --- Função para limpar a seleção ---
+  // --- Limpar a seleção ---
   const handleClear = () => {
     setFile(null);
     setAscii('');
   };
 
-  // --- A NOVA E PRINCIPAL FUNÇÃO DE LÓGICA ---
   const handleUpload = () => {
     if (!file) {
       alert('Por favor, selecione um arquivo primeiro!');
       return;
     }
     setLoading(true);
-    setAscii(''); // Limpa o resultado anterior antes de uma nova conversão
-    
+    setAscii('');
+
     const formData = new FormData();
     formData.append('image', file);
     formData.append('width', width);
@@ -44,84 +63,87 @@ function App() {
       method: 'POST',
       body: formData,
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Falha na resposta do servidor.');
-      }
-      
-      // Verificamos o tipo de conteúdo que o backend está enviando
-      const contentType = response.headers.get("content-type");
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Falha na resposta do servidor.');
+        }
 
-      // CASO 1: A RESPOSTA É UM STREAM DE EVENTOS (É UM GIF!)
-      if (contentType && contentType.includes("text/event-stream")) {
-        console.log("Recebendo stream de GIF...");
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+        const contentType = response.headers.get("content-type");
 
-        // Função recursiva para ler o stream continuamente
-        const readStream = () => {
-          reader.read().then(({ done, value }) => {
-            if (done) {
-              console.log("Stream finalizado.");
-              setLoading(false);
-              return;
-            }
+        // CASO 1: A RESPOSTA É UM STREAM DE EVENTOS (É UM GIF!)
+        if (contentType && contentType.includes("text/event-stream")) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
 
-            // Decodifica o pedaço de dados recebido e adiciona ao buffer
-            buffer += decoder.decode(value, { stream: true });
-            
-            // Processa todas as mensagens completas (que terminam com \n\n) no buffer
-            while (buffer.includes('\n\n')) {
-              const messageEnd = buffer.indexOf('\n\n');
-              const message = buffer.substring(0, messageEnd);
-              buffer = buffer.substring(messageEnd + 2); // Remove a mensagem processada do buffer
-
-              if (message.startsWith('data:')) {
-                const data = message.substring(5).trim();
-                try {
-                  const parsedData = JSON.parse(data);
-                  // ATUALIZA A TELA COM O NOVO FRAME! É AQUI QUE A ANIMAÇÃO ACONTECE.
-                  setAscii(parsedData);
-                } catch (e) {
-                  console.error("Erro ao fazer parse do frame JSON:", e);
-                }
-              } else if (message.startsWith('event: end')) {
-                 // O backend avisou que o GIF acabou. Paramos de carregar.
-                 setLoading(false);
+          // Função recursiva para ler o stream continuamente
+          const readStream = () => {
+            reader.read().then(({ done, value }) => {
+              if (done) {
+                setLoading(false);
+                return;
               }
-            }
-            
-            // Continua lendo o próximo pedaço do stream
-            readStream();
-          });
-        };
-        
-        readStream();
 
-      } else {
-        // CASO 2: A RESPOSTA É TEXTO SIMPLES (É UMA IMAGEM ESTÁTICA)
-        console.log("Recebendo imagem estática...");
-        response.text().then(data => {
-          setAscii(data);
-          setLoading(false);
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Erro no upload:', error);
-      alert('Ocorreu um erro ao enviar a imagem. Verifique se o backend está rodando.');
-      setLoading(false);
-    });
+              buffer += decoder.decode(value, { stream: true });
+
+              while (buffer.includes('\n\n')) {
+                const messageEnd = buffer.indexOf('\n\n');
+                const message = buffer.substring(0, messageEnd);
+                buffer = buffer.substring(messageEnd + 2);
+
+                if (message.startsWith('data:')) {
+                  const data = message.substring(5).trim();
+                  try {
+                    const parsedData = JSON.parse(data);
+                    setAscii(parsedData);
+                  } catch (e) {
+                    console.error("Erro ao fazer parse do frame JSON:", e);
+                  }
+                } else if (message.startsWith('event: end')) {
+                  setLoading(false);
+                }
+              }
+
+              readStream();
+            });
+          };
+
+          readStream();
+
+        } else {
+          // CASO 2: A RESPOSTA É TEXTO SIMPLES (É UMA IMAGEM ESTÁTICA)
+          response.text().then(data => {
+            setAscii(data);
+            setLoading(false);
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Erro no upload:', error);
+        alert('Ocorreu um erro ao enviar a imagem. Verifique se o backend está rodando.');
+        setLoading(false);
+      });
   };
-  
-  // --- Estrutura JSX (A mesma da versão anterior, sem alterações) ---
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(ascii)
+      .then(() => alert('ASCII copiado para a área de transferência!'))
+      .catch(() => alert('Não foi possível copiar.'));
+  };
+
+  // --- Estrutura JSX ---
   return (
     <div className="App">
-      <h1 className="title">ASCII ART</h1>
-      <div className="buttons">
-        <button className="btn btn-convert" onClick={() => setConvOpen(true)}>Converter</button>
-        <button className="btn btn-info-btn" onClick={() => setInfoOpen(true)}>Info</button>
+      <div className="content-wrap">
+
+        <div className="container-title">
+          <h1 className="title">Conversor de ASCII ART</h1>
+        </div>
+
+        <div className="buttons">
+          <button className="btn" onClick={() => setConvOpen(true)}>Converter</button>
+          <button className="btn" onClick={() => setInfoOpen(true)}>Informações</button>
+        </div>
       </div>
 
       {isConvOpen && (
@@ -139,7 +161,7 @@ function App() {
             ) : (
               <div className="controls-container">
                 <p>{loading ? 'Processando, por favor aguarde...' : 'Selecione uma imagem e ajuste os parâmetros para a conversão.'}</p>
-                
+
                 <div className="control-item">
                   <label htmlFor="file-upload">1. Escolha uma imagem:</label>
                   <input
@@ -167,10 +189,24 @@ function App() {
                 </div>
               </div>
             )}
-            
+
             <div className="modal-actions">
+              <button
+                className="btn-copy"
+                onClick={handleCopy}
+                disabled={!ascii}
+              >
+                <i className="material-icons" style={{ marginRight: '0.3rem' }}>
+                  content_copy
+                </i>
+                Copiar
+              </button>
+
               <button className="btn-clear" onClick={handleClear} disabled={loading || (!file && !ascii)}>
                 Limpar
+                <i className="material-icons" style={{ marginRight: '0.3rem' }}>
+                  delete
+                </i>
               </button>
               <button
                 className="btn-convert"
@@ -178,16 +214,56 @@ function App() {
                 disabled={!file || loading}
               >
                 {loading ? 'Convertendo...' : 'Converter'}
+                <i className="material-icons" style={{ marginRight: '0.3rem' }}>
+                  send
+                </i>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {isInfoOpen && (
-        /* ... seu modal de info ... */
-        <div/>
-      )}
+      {/* Modal de Informações do Projeto */}
+      <Modal
+        isOpen={isInfoOpen}
+        onRequestClose={() => setInfoOpen(false)}
+        className="modal info"
+        overlayClassName="overlay"
+      >
+        <h2 className="modal-info-title">Sobre o Projeto</h2>
+        <div className="info-content">
+          {projectInfo.description.trim().split('\n\n').map((par, i) => (
+            <p key={i}>{par}</p>
+          ))}
+
+          {/* video Informativo */}
+          <iframe
+            title="Vídeo do Projeto"
+            width="100%"
+            height="240"
+            src={projectInfo.videoUrl}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="info-video"
+          />
+
+          {/* CTA Repositório */}
+          <div className="info-cta">
+            <p>Gostou do que viu? Para mais informações, acesse nosso projeto:</p>
+            <a
+              href={projectInfo.repoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cta-button"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Footer da página */}
+      <Footer />
     </div>
   );
 }

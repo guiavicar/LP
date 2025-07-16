@@ -9,7 +9,7 @@
   --accent2-hover: #dcd337;
 }
 
-/* Elementos principais da página */
+/* Estilo base */
 * {
   margin: 0;
   padding: 0;
@@ -22,65 +22,65 @@ body,
   height: 100%;
 }
 
+/* Elementos principais da página */
 .App {
-  background-image: url("./assets/jungle-sloths.png");
+  background-image: url("./assets/imagemFundoProjetoLP.jpg");
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-size: cover;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: flex-start;
   width: 100vw;
   height: 100vh;
 }
 
 /* título da página */
+.container-title {
+  margin-bottom: 3rem;
+  margin-top: -50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #BFFF00;
+  border-radius: 25px;
+}
+
 .title {
-  color: var(--fg);
-  font-size: 3.4rem;
-  margin-bottom: 2rem;
+  color: white;
+  font-size: 3rem;
+  margin: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-bottom: 10px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Botões da página */
+/* Container dos botões */
 .buttons {
   display: flex;
-  gap: 4rem;
+  gap: 40rem;
 }
 
 /* regras base ambos botões principais */
 .btn {
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
   border: none;
-  border-radius: 1rem;
-  font-size: 1.2rem;
+  border-radius: 100%;
+  font-size: 1.5rem;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease;
+  background-color: #FF6F61;
+  color: white;
 }
 
-/* botão “Converter” */
-.btn-convert {
-  background: var(--accent);
-}
-
-.btn-convert:hover {
-  background: var(--accent-hover);
-  transform: scale(1.05);
-}
-
-/* botão “Info” */
-.btn-info-btn {
-  background: var(--accent2);
-}
-
-.btn-info-btn:hover {
-  background: var(--accent2-hover);
-  transform: scale(1.05);
+.btn:hover {
+  transform: scale(1.25);
 }
 
 /* overlay */
@@ -129,24 +129,24 @@ body,
   cursor: pointer;
 }
 
-/* Dropzone maior */
+/* Dropzone */
 .modal-convert .controls-container {
   width: 100%;
-  min-height: 200px; /* Reduzimos a altura mínima para dar espaço ao resultado */
+  min-height: 200px;
+  height: 80%;
   padding: 2rem;
   border: 2px dashed var(--accent2);
   border-radius: 0.75rem;
   margin: 1.5rem 0;
   display: flex;
-  flex-direction: column; /* Organiza os itens em coluna */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 25px; /* Espaço entre os controles */
+  gap: 25px;
   font-size: 1rem;
   color: grey;
 }
 
-/* Container dos botões de ação */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -154,11 +154,29 @@ body,
   margin-top: 1rem;
 }
 
+/* Botão “Copiar” */
+.btn-copy {
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  background: #48BB78;
+  color: #FFF;
+}
+
+.btn-copy:hover:not(:disabled) {
+  background: #38A169;
+}
+
 /* Botão “Limpar” */
 .btn-clear {
   background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent);
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   font-size: 1rem;
@@ -167,6 +185,9 @@ body,
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  background: transparent;
+  border: 1px solid #F56565;
+  color: #F56565;
 }
 
 .btn-clear i.material-icons {
@@ -176,16 +197,10 @@ body,
 .btn-clear:hover {
   background: var(--accent-hover);
   color: var(--bg);
+  transform: scale(1.05);
 }
 
-/* Estado disabled */
-.btn-clear:disabled,
-.btn-action:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Botão principal “Converter” */
+/* Botão “Converter” */
 .btn-convert {
   background: var(--accent);
   color: var(--bg);
@@ -199,15 +214,18 @@ body,
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
+  cursor: pointer;
 }
 
 .btn-convert i.material-icons {
   margin-left: 0.5rem;
 }
 
-.btn-convert:hover {
-  background: var(--accent-hover);
-  transform: scale(1.05);
+.btn-clear:disabled,
+.btn-action:disabled,
+.btn-copy {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* saída ASCII */
@@ -221,6 +239,24 @@ body,
   white-space: pre-wrap;
 }
 
+.ascii-container {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  background-color: #000;
+  border: 1px solid #555;
+  border-radius: 8px;
+  overflow: auto;
+  text-align: left;
+}
+
+.ascii-container pre {
+  color: #E0E0E0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  line-height: 0.9;
+  padding: 1rem;
+}
 
 /* --------------------
    Info Modal
@@ -234,11 +270,14 @@ body,
   background-color: var(--accent);
 }
 
+/* Titulo modal info */
 .modal-info-title {
   text-align: center;
   margin-bottom: 1rem;
+  color: var(--fg);
 }
 
+/* Conteudo modal info */
 .info-content {
   height: calc(80vh - 3.5rem - 56px);
   overflow-y: auto;
@@ -254,9 +293,43 @@ body,
   line-height: 1.4;
 }
 
+.info-content p {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+/* Video modal info */
 .info-video {
   border-radius: 10px;
   margin-top: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+/* bloco do CTA centralizado */
+.info-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* botão git */
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 4rem;
+  border-radius: 4px;
+  background: var(--accent-color, #004cff);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.1s ease, opacity 0.15s;
+}
+
+.cta-button:hover {
+  transform: scale(1.04);
+  opacity: 0.9;
 }
 
 /* Scroll modal informativa */
@@ -265,7 +338,6 @@ body,
 }
 
 .info-content::-webkit-scrollbar-thumb {
-  /* background: rgba(255,255,255,0.2); */
   background: rgb(60, 58, 58);
   border-radius: 3px;
 }
@@ -280,32 +352,12 @@ body,
   width: 100%;
 }
 
-.ascii-container {
-  width: 100%;
-  height: 65vh; /* Altura para ocupar o espaço do modal */
-  margin: 0 auto;
-  background-color: #000;
-  border: 1px solid #555;
-  border-radius: 8px;
-  overflow: auto; /* Rolagem em ambas as direções se necessário */
-  text-align: left;
-}
-
-.ascii-container pre {
-  color: #E0E0E0;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 8px; /* A mágica do "zoom" */
-  line-height: 0.9;
-  padding: 1rem;
-}
-
-/* --- Estilos Bônus para os Controles (opcional, ajuste como quiser) --- */
 .controls-area {
   margin: 30px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 25px; /* Espaço entre os controles */
+  gap: 25px;
 }
 
 .control-item {
@@ -317,14 +369,62 @@ body,
   font-weight: bold;
 }
 
-.convert-button {
-  padding: 12px 25px;
-  font-size: 16px;
-  cursor: pointer;
+.content-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rem;
+  flex: 1;
+  width: 100%;
 }
 
+/* --------------------
+   Footer
+   -------------------- */
+.footer {
+  bottom: 0;
+  width: 100%;
+  padding: 20px 0;
+  background: rgba(46, 52, 64, 0.8);
+  color: var(--fg);
+  text-align: center;
+}
 
-/* Não sei... */
+.participants {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.participant {
+  display: flex;
+  flex-direction: column;
+}
+
+.participant .name {
+  font-weight: bold;
+}
+
+.participant .matricula {
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.repo-link a {
+  color: var(--accent2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.repo-link a:hover {
+  color: var(--accent2-hover);
+  text-decoration: none;
+}
+
+/* Demais... */
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
