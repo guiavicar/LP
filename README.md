@@ -1,70 +1,160 @@
-# Getting Started with Create React App
+﻿Conversor de Imagem para Arte ASCII
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Este projeto é uma aplicação web que permite aos usuários fazer upload de imagens e convertê-las em arte ASCII. Ele é composto por um backend robusto construído com Rust e Actix-Web, e um frontend interativo desenvolvido com React.
+🚀 Funcionalidades
 
-## Available Scripts
+    Upload de Imagem: Faça upload de imagens nos formatos comuns (PNG, JPEG, GIF).
 
-In the project directory, you can run:
+    Ajuste de Largura: Controle a largura da arte ASCII gerada através de um slider.
 
-### `npm start`
+    Conversão em Tempo Real: O backend processa a imagem e retorna a arte ASCII.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+    Visualização Interativa: Exibe a arte ASCII gerada em um modal dedicado no frontend.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+    Informações do Projeto: Um modal informativo sobre o projeto.
 
-### `npm test`
+🛠️ Tecnologias Utilizadas
+Backend (Rust)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+    Rust: Linguagem de programação de sistemas focada em segurança, velocidade e concorrência.
 
-### `npm run build`
+    Actix-Web: Um framework web poderoso e rápido para Rust.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    image crate: Biblioteca para manipulação de imagens (redimensionamento, ajuste de contraste, conversão para tons de cinza).
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+    actix-multipart: Para lidar com uploads de arquivos multipart/form-data.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+    actix-cors: Para gerenciar as políticas de Cross-Origin Resource Sharing (CORS).
 
-### `npm run eject`
+Frontend (React)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+    React: Biblioteca JavaScript para construção de interfaces de usuário.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    JavaScript (ES6+): Linguagem de programação para a lógica do frontend.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+    CSS: Para estilização e layout da interface.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+    web-vitals: Para medição de métricas de performance web.
 
-## Learn More
+⚙️ Como Rodar o Projeto
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Para rodar este projeto, você precisará ter o Rust/Cargo e o Node.js/npm (ou Yarn) instalados em sua máquina.
+Pré-requisitos
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+    Rust e Cargo: Siga as instruções em rustup.rs para instalar.
 
-### Code Splitting
+    Node.js e npm/Yarn: Baixe em nodejs.org ou use um gerenciador de versões como NVM.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. Backend (Rust)
 
-### Analyzing the Bundle Size
+    Navegue até o diretório do backend:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+    cd seu-projeto/lp-backend # Assumindo que o main.rs está aqui
 
-### Making a Progressive Web App
+    Compile e execute o servidor:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+    cargo run
 
-### Advanced Configuration
+    O servidor será iniciado em http://127.0.0.1:8080. Você verá uma mensagem no console: 🚀 Servidor backend rodando em http://127.0.0.1:8080.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+2. Frontend (React)
 
-### Deployment
+    Navegue até o diretório do frontend:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+    cd seu-projeto/lp-frontend # Assumindo que os arquivos React estão aqui
 
-### `npm run build` fails to minify
+    Instale as dependências:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+    npm install # ou yarn install
+
+    Inicie a aplicação React:
+
+    npm start # ou yarn start
+
+    A aplicação será aberta automaticamente em seu navegador, geralmente em http://localhost:3000.
+
+Observação: Certifique-se de que o backend Rust esteja rodando antes de iniciar o frontend, pois o frontend tentará se comunicar com ele para a conversão de imagens.
+🖥️ Uso da API (Backend)
+
+O backend expõe um único endpoint para a conversão de imagens:
+
+    URL: http://127.0.0.1:8080/api/convert
+
+    Método HTTP: POST
+
+    Content-Type: multipart/form-data
+
+Parâmetros da Requisição
+
+Nome do Campo
+	
+
+Tipo
+	
+
+Descrição
+
+image
+	
+
+File
+	
+
+O arquivo de imagem a ser convertido (PNG, JPEG, GIF).
+
+width
+	
+
+String
+	
+
+A largura desejada para a arte ASCII (ex: "200"). Padrão: "200".
+Exemplo de Requisição (JavaScript - como no App.js)
+
+const formData = new FormData();
+formData.append('image', seuArquivoDeImagem); // 'seuArquivoDeImagem' é um objeto File
+formData.append('width', '200'); // Ou o valor do slider
+
+fetch('http://127.0.0.1:8080/api/convert', {
+  method: 'POST',
+  body: formData,
+})
+.then(response => {
+  if (!response.ok) {
+    throw new Error('Falha na resposta do servidor.');
+  }
+  return response.text(); // A resposta é a string da arte ASCII
+})
+.then(asciiArt => {
+  console.log(asciiArt);
+})
+.catch(error => {
+  console.error('Erro:', error);
+});
+
+📂 Estrutura de Arquivos Principais
+
+.
+├── lp-backend/
+│   └── src/
+│       └── main.rs             # Código do servidor Rust (Actix-Web) e lógica de conversão
+├── lp-frontend/
+│   ├── public/
+│   │   └── index.html          # Arquivo HTML principal do React
+│   ├── src/
+│   │   ├── App.js              # Componente principal do React, lógica de UI e comunicação com backend
+│   │   ├── App.css             # Estilos CSS para o componente App.js
+│   │   ├── index.js            # Ponto de entrada da aplicação React
+│   │   ├── index.css           # Estilos CSS globais
+│   │   ├── projectInfo.js      # Informações do projeto (descrição, URL de vídeo)
+│   │   ├── reportWebVitals.js  # Relatório de métricas de performance web
+│   │   └── setupTests.js       # Configuração de testes Jest
+│   └── package.json            # Dependências e scripts do frontend
+└── README.md                   # Este arquivo
+
+🤝 Contribuição
+
+Contribuições são bem-vindas! Se você tiver ideias para melhorias, novas funcionalidades ou encontrar bugs, sinta-se à vontade para abrir uma issue ou enviar um pull request.
+📄 Licença
+
+Este projeto está licenciado sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
