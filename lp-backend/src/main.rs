@@ -1,5 +1,4 @@
 
-// 1. "Responder" foi removido daqui, pois não era mais usado.
 use actix_web::{web, App, HttpResponse, HttpServer, Error};
 use actix_cors::Cors;
 use actix_multipart::Multipart;
@@ -11,7 +10,6 @@ use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
 use tokio_stream::wrappers::ReceiverStream;
 
-// --- SUAS FUNÇÕES DE PROCESSAMENTO DE IMAGEM (sem alterações) ---
 const ASCII_CHARS: &str = " .:-=+*!DRB#";
 
 fn resize_image(image: &DynamicImage, new_width: u32) -> DynamicImage {
@@ -63,7 +61,6 @@ fn frame_to_ascii(image: &DynamicImage, new_width: u32) -> String {
         .join("\n")
 }
 
-// --- HANDLER QUE RECEBE O UPLOAD (com a correção) ---
 async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut image_data = Vec::new();
     let mut width_str = String::from("200");
@@ -90,8 +87,6 @@ async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let image_format = image::guess_format(&image_data).unwrap_or(ImageFormat::Png);
 
     if image_format == ImageFormat::Gif {
-        // --- INÍCIO DA CORREÇÃO 2 (Type Mismatch) ---
-        // O canal agora envia um Result, como o Actix espera.
         let (tx, rx) = mpsc::channel::<Result<Bytes, Error>>(10);
         let stream = ReceiverStream::new(rx);
 
@@ -99,26 +94,21 @@ async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
             let cursor = Cursor::new(image_data);
             if let Ok(mut decoder) = gif::Decoder::new(cursor) {
                 
-                // --- INÍCIO DA CORREÇÃO 1 (Iterator) ---
-                // Trocamos o 'for' loop pelo 'while let' correto para a biblioteca gif.
                 while let Ok(Some(frame)) = decoder.read_next_frame() {
                     let delay = Duration::from_millis(frame.delay as u64 * 10);
                     
-                    // A conversão do frame para RGBA precisa ser feita com cuidado
                     if let Some(rgba_image) = RgbaImage::from_raw(frame.width as u32, frame.height as u32, frame.buffer.clone().into_owned()) {
                         let dynamic_image = DynamicImage::ImageRgba8(rgba_image);
                         let ascii_frame = frame_to_ascii(&dynamic_image, ascii_width);
                         
                         let sse_message = format!("data: {}\n\n", serde_json::to_string(&ascii_frame).unwrap());
                         
-                        // Enviamos o resultado encapsulado em Ok()
                         if tx.send(Ok(Bytes::from(sse_message))).await.is_err() {
                             break;
                         }
                     }
                     sleep(delay).await;
                 }
-                // --- FIM DA CORREÇÃO 1 ---
             }
             let _ = tx.send(Ok(Bytes::from("event: end\ndata: done\n\n"))).await;
         });
@@ -139,7 +129,6 @@ async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
     }
 }
 
-// --- FUNÇÃO MAIN (sem alterações) ---
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("🚀 Servidor backend rodando em http://127.0.0.1:8080");
