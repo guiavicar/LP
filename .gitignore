@@ -1,2 +1,2 @@
-/target
-/.vs
+# Ignorar pastas de compilação do Rust
+/target/
