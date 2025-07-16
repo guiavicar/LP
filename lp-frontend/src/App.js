@@ -3,6 +3,35 @@
 import React, { useState } from 'react';
 import './App.css'; 
 
+// Componente do Rodapé
+const Footer = () => {
+  const participants = [
+    { name: 'Lucas Tavares', matricula: '231011650' },
+    { name: 'Guilherme Avila', matricula: '211068305' },
+    { name: 'Henrique Valente', matricula: '211055380' },
+    { name: 'Heitor Fernandes', matricula: '231011453' },
+    { name: 'Gabriel Xisto', matricula: '211055503' },
+  ];
+
+  return (
+    <footer className="footer">
+      <div className="participants">
+        {participants.map(p => (
+          <div key={p.matricula} className="participant">
+            <span className="name">{p.name}</span>
+            <span className="matricula">{p.matricula}</span>
+          </div>
+        ))}
+      </div>
+      <div className="repo-link">
+        <a href="https://github.com/guiavicar/LP" target="_blank" rel="noopener noreferrer">
+          Repositório do Projeto
+        </a>
+      </div>
+    </footer>
+  );
+};
+
 function App() {
   // --- Estados da UI (vindos do seu novo design) ---
   const [isConvOpen, setConvOpen] = useState(false);
@@ -64,10 +93,12 @@ function App() {
   // --- Estrutura JSX (A Interface Visual) ---
   return (
     <div className="App">
-      <h1 className="title">ASCII ART</h1>
-      <div className="buttons">
-        <button className="btn btn-convert" onClick={() => setConvOpen(true)}>Converter</button>
-        <button className="btn btn-info-btn" onClick={() => setInfoOpen(true)}>Info</button>
+      <div className="content-wrap">
+        <h1 className="title">ASCII ART</h1>
+        <div className="buttons">
+          <button className="btn btn-convert" onClick={() => setConvOpen(true)}>Converter</button>
+          <button className="btn btn-info-btn" onClick={() => setInfoOpen(true)}>Info</button>
+        </div>
       </div>
 
       {/* ============== MODAL DE CONVERSÃO ============== */}
@@ -133,7 +164,7 @@ function App() {
         </div>
       )}
 
-      {/* ============== MODAL DE INFORMAÇÃO (Não mexemos aqui) ============== */}
+      {/* ============== MODAL DE INFORMAÇÃO ============== */}
       {isInfoOpen && (
         <div className="overlay">
           <div className="modal info">
@@ -145,6 +176,7 @@ function App() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }

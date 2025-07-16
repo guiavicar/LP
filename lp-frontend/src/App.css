@@ -323,6 +323,57 @@ body,
   cursor: pointer;
 }
 
+.App {
+  position: relative;
+  min-height: 100vh;
+}
+
+.content-wrap {
+  padding-bottom: 120px; /* Altura do rodapé */
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 20px 0;
+  background: rgba(46, 52, 64, 0.8); /* Usando a cor de fundo com transparência */
+  color: var(--fg);
+  text-align: center;
+}
+
+.participants {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.participant {
+  display: flex;
+  flex-direction: column;
+}
+
+.participant .name {
+  font-weight: bold;
+}
+
+.participant .matricula {
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.repo-link a {
+  color: var(--accent2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.repo-link a:hover {
+  color: var(--accent2-hover);
+  text-decoration: underline;
+}
 
 /* Não sei... */
 @media (prefers-reduced-motion: no-preference) {
