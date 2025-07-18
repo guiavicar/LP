@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { participants } from './data/participants';
 import { projectInfo } from './data/projectInfo';
@@ -31,6 +31,16 @@ function App() {
   const [ascii, setAscii] = useState('');
   const [loading, setLoading] = useState(false);
   const [width, setWidth] = useState(200);
+  const [frames, setFrames] = useState([]);
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  useEffect(() => {
+    if (frames.length === 0) return;
+    const interval = setInterval(() => {
+      setFrameIndex(i => (i + 1) % frames.length);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [frames]);
 
   // --- Lidar com a seleção do arquivo ---
   const handleFileChange = (event) => {
@@ -45,6 +55,8 @@ function App() {
   const handleClear = () => {
     setFile(null);
     setAscii('');
+    setFrames([]);
+    setFrameIndex(0);
   };
 
   const handleUpload = () => {
@@ -54,135 +66,114 @@ function App() {
     }
     setLoading(true);
     setAscii('');
+    setFrames([]);
+    setFrameIndex(0);
 
     const formData = new FormData();
     formData.append('image', file);
     formData.append('width', width);
 
-    fetch('http://127.0.0.1:8080/api/convert', {
+    const isGif = file.type === 'image/gif';
+    const url = isGif
+      ? 'http://127.0.0.1:8080/api/convert-gif'
+      : 'http://127.0.0.1:8080/api/convert-image';
+
+    fetch(url, {
       method: 'POST',
       body: formData,
     })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Falha na resposta do servidor.');
-        }
-
-        const contentType = response.headers.get("content-type");
-
-        // CASO 1: A RESPOSTA É UM STREAM DE EVENTOS (É UM GIF!)
-        if (contentType && contentType.includes("text/event-stream")) {
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-
-          // Função recursiva para ler o stream continuamente
-          const readStream = () => {
-            reader.read().then(({ done, value }) => {
-              if (done) {
-                setLoading(false);
-                return;
-              }
-
-              buffer += decoder.decode(value, { stream: true });
-
-              while (buffer.includes('\n\n')) {
-                const messageEnd = buffer.indexOf('\n\n');
-                const message = buffer.substring(0, messageEnd);
-                buffer = buffer.substring(messageEnd + 2);
-
-                if (message.startsWith('data:')) {
-                  const data = message.substring(5).trim();
-                  try {
-                    const parsedData = JSON.parse(data);
-                    setAscii(parsedData);
-                  } catch (e) {
-                    console.error("Erro ao fazer parse do frame JSON:", e);
-                  }
-                } else if (message.startsWith('event: end')) {
-                  setLoading(false);
-                }
-              }
-
-              readStream();
-            });
-          };
-
-          readStream();
-
+      .then(async res => {
+        if (!res.ok) throw new Error('Falha no servidor');
+        if (isGif) {
+          const data = await res.json();
+          setFrames(data);
         } else {
-          // CASO 2: A RESPOSTA É TEXTO SIMPLES (É UMA IMAGEM ESTÁTICA)
-          response.text().then(data => {
-            setAscii(data);
-            setLoading(false);
-          });
+          const text = await res.text();
+          setAscii(text);
         }
       })
-      .catch(error => {
-        console.error('Erro no upload:', error);
-        alert('Ocorreu um erro ao enviar a imagem. Verifique se o backend está rodando.');
-        setLoading(false);
-      });
+      .catch(err => {
+        console.error(err);
+        alert('Erro ao converter.');
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(ascii)
-      .then(() => alert('ASCII copiado para a área de transferência!'))
-      .catch(() => alert('Não foi possível copiar.'));
+    const displayed = frames.length
+      ? frames[frameIndex]
+      : ascii;
+    navigator.clipboard.writeText(displayed)
+      .then(() => alert('ASCII copiado!'))
+      .catch(() => alert('Falha ao copiar.'));
   };
 
   // --- Estrutura JSX ---
   return (
     <div className="App">
       <div className="content-wrap">
-
-        <div className="container-title">
-          <h1 className="title">Conversor de ASCII ART</h1>
-        </div>
-
-        <div className="buttons">
-          <button className="btn" onClick={() => setConvOpen(true)}>Converter</button>
-          <button className="btn" onClick={() => setInfoOpen(true)}>Informações</button>
+        <h1 className="title">Conversor de ASCII ART</h1>
+        <div className="container-buttons">
+          <button className="btn" onClick={() => setConvOpen(true)}>
+            Converter
+          </button>
+          <button className="btn" onClick={() => setInfoOpen(true)}>
+            Informações
+          </button>
         </div>
       </div>
 
       {isConvOpen && (
         <div className="overlay">
           <div className="modal-convert">
-            <button className="modal-close" onClick={() => setConvOpen(false)}>&times;</button>
-            <h2 className="modal-convert-title">Converter Imagem</h2>
+            <button className="modal-close" onClick={() => setConvOpen(false)}>
+              &times;
+            </button>
 
-            {ascii ? (
+            <div className="modal-header">
+              <h2 className="modal-convert-title">Converter Imagem</h2>
+              <h4 className="modal-convert-title">
+                - Selecione uma arquivo
+              </h4>
+            </div>
+
+            {(ascii || frames.length) ? (
               <div className="result-area">
                 <div className="ascii-container">
-                  <pre>{ascii}</pre>
+                  <pre>
+                    {frames.length
+                      ? frames[frameIndex]
+                      : ascii
+                    }
+                  </pre>
                 </div>
               </div>
             ) : (
               <div className="controls-container">
-                <p>{loading ? 'Processando, por favor aguarde...' : 'Selecione uma imagem e ajuste os parâmetros para a conversão.'}</p>
-
                 <div className="control-item">
-                  <label htmlFor="file-upload">1. Escolha uma imagem:</label>
+                  <label htmlFor="file-upload">1. Escolha um arquivo:</label>
                   <input
                     id="file-upload"
                     type="file"
-                    onChange={handleFileChange}
                     accept="image/png, image/jpeg, image/gif"
+                    onChange={handleFileChange}
                     disabled={loading}
                   />
-                  {file && !loading && <span>Arquivo selecionado: {file.name}</span>}
+                  {file && !loading && (
+                    <span>{file.name}</span>
+                  )}
                 </div>
-
                 <div className="control-item">
-                  <label htmlFor="width-slider">2. Ajuste a Largura ({width}px)</label>
+                  <label htmlFor="width-slider">
+                    2. Ajuste a Largura ({width}px)
+                  </label>
                   <input
                     id="width-slider"
                     type="range"
                     min="50"
                     max="400"
                     value={width}
-                    onChange={(e) => setWidth(e.target.value)}
+                    onChange={e => setWidth(Number(e.target.value))}
                     className="slider"
                     disabled={loading}
                   />
@@ -194,15 +185,15 @@ function App() {
               <button
                 className="btn-copy"
                 onClick={handleCopy}
-                disabled={!ascii}
+                disabled={loading || (!ascii && frames.length === 0)}
               >
-                <i className="material-icons" style={{ marginRight: '0.3rem' }}>
-                  content_copy
-                </i>
                 Copiar
               </button>
-
-              <button className="btn-clear" onClick={handleClear} disabled={loading || (!file && !ascii)}>
+              <button
+                className="btn-clear"
+                onClick={handleClear}
+                disabled={loading || (!file && !ascii && frames.length === 0)}
+              >
                 Limpar
                 <i className="material-icons" style={{ marginRight: '0.3rem' }}>
                   delete
@@ -232,7 +223,7 @@ function App() {
       >
         <h2 className="modal-info-title">Sobre o Projeto</h2>
         <div className="info-content">
-          {projectInfo.description.trim().split('\n\n').map((par, i) => (
+          {projectInfo.description.split('\n\n').map((par, i) => (
             <p key={i}>{par}</p>
           ))}
 
@@ -249,15 +240,25 @@ function App() {
 
           {/* CTA Repositório */}
           <div className="info-cta">
-            <p>Gostou do que viu? Para mais informações, acesse nosso projeto:</p>
-            <a
-              href={projectInfo.repoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cta-button"
-            >
-              GitHub
-            </a>
+            <p>Gostou do que viu? Para mais informações, acesse:</p>
+            <div className="info-cta-buttons">
+              <a
+                href={projectInfo.repoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cta-button"
+              >
+                GitHub
+              </a>
+              <a
+                href={projectInfo.repoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wiki-button"
+              >
+                Wiki
+              </a>
+            </div>
           </div>
         </div>
       </Modal>

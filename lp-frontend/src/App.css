@@ -57,7 +57,7 @@ body,
 }
 
 /* Container dos botões */
-.buttons {
+.container-buttons {
   display: flex;
   gap: 40rem;
 }
@@ -108,8 +108,14 @@ body,
   padding: 2rem;
   border-radius: 1rem;
   background: #f5f5dc;
-  color: var(--fg);
+  color: var(--accent);
   overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .modal-convert-title {
@@ -309,19 +315,26 @@ body,
 .info-cta {
   display: flex;
   flex-direction: column;
-  align-items: center;
   text-align: center;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.info-cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
 }
 
 /* botão git */
 .cta-button {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 4rem;
+  padding: 0.4rem 3rem;
   border-radius: 4px;
-  background: var(--accent-color, #004cff);
-  color: #fff;
+  background: var(--accent-color, #000000);
+  color: white;
   font-weight: 600;
   text-decoration: none;
   transition: transform 0.1s ease, opacity 0.15s;
@@ -332,13 +345,32 @@ body,
   opacity: 0.9;
 }
 
+/* Botão wiki */
+.wiki-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 3.5rem;
+  border-radius: 4px;
+  background: var(--accent-color, #ffffff);
+  color: rgb(0, 0, 0);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.1s ease, opacity 0.15s;
+  margin-left: 1rem;
+}
+
+.wiki-button:hover {
+  transform: scale(1.04);
+  opacity: 0.9;
+}
+
 /* Scroll modal informativa */
 .info-content::-webkit-scrollbar {
   width: 6px;
 }
 
 .info-content::-webkit-scrollbar-thumb {
-  background: rgb(60, 58, 58);
+  background: var(--fg);
   border-radius: 3px;
 }
 

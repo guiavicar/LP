@@ -3,6 +3,10 @@ use actix_cors::Cors;
 use actix_multipart::Multipart;
 use futures_util::stream::StreamExt;
 use image::{GenericImageView, DynamicImage, GrayImage};
+use image::codecs::gif::GifDecoder;
+use image::AnimationDecoder;
+use std::io::Cursor;
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 
 // caracteres ASCII
 const ASCII_CHARS: &str = "@#WM&8%B$0QOZCLJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,^. ";
@@ -58,8 +62,7 @@ fn frame_to_ascii(image: &DynamicImage) -> String {
         .join("\n")
 }
 
-
-async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
+async fn convert_image(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut image_data = Vec::new();
 
     // Itera sobre os "campos" do formulário enviado (no nosso caso, só o campo 'image')
@@ -89,6 +92,37 @@ async fn convert_real(mut payload: Multipart) -> Result<HttpResponse, Error> {
             Ok(HttpResponse::BadRequest().body("Formato de arquivo inválido."))
         }
     }
+}   
+
+// ——————— handler para GIFs animados ———————
+async fn convert_gif(mut payload: Multipart) -> Result<HttpResponse, Error> {
+    let mut data = Vec::new();
+    while let Some(item) = payload.next().await {
+        let mut field = item?;
+        while let Some(chunk) = field.next().await {
+            data.extend_from_slice(&chunk?);
+        }
+    }
+    if data.is_empty() {
+        return Ok(HttpResponse::BadRequest().body("Nenhum arquivo enviado."));
+    }
+
+    let cursor = Cursor::new(&data);
+    let decoder = GifDecoder::new(cursor)
+        .map_err(|_| ErrorBadRequest("Não é um GIF válido."))?;  
+
+    let frames = decoder.into_frames()
+        .collect_frames()
+        .map_err(|_| ErrorInternalServerError("Erro ao ler frames."))?;
+
+    let ascii_frames: Vec<String> = frames.iter()
+        .map(|frame| {
+            let dyn_img = DynamicImage::ImageRgba8(frame.buffer().clone());
+            frame_to_ascii(&dyn_img)
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(&ascii_frames))
 }
 
 #[actix_web::main]
@@ -97,14 +131,15 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         let cors = Cors::default()
-              .allowed_origin("http://localhost:3000")
-              .allowed_methods(vec!["GET", "POST"])
-              .allow_any_header()
-              .max_age(3600);
+            .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST"])
+            .allow_any_header()
+            .max_age(3600);
 
         App::new()
             .wrap(cors)
-            .route("/api/convert", web::post().to(convert_real))
+            .route("/api/convert-image", web::post().to(convert_image))
+            .route("/api/convert-gif",   web::post().to(convert_gif))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
