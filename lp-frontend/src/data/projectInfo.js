@@ -31,6 +31,7 @@ export const projectInfo = {
 
       -  CSS modular e web-vitals para monitoramento de performance. 
     `,
-    videoUrl: 'https://www.youtube-nocookie.com/embed/X874raPe-_4',
-    repoUrl: 'https://github.com/guiavicar/LP'
+    videoUrl: 'https://www.youtube-nocookie.com/embed/1w6aUvnH2_w',
+    repoUrl: 'https://github.com/guiavicar/LP',
+    linkWiki: 'https://github.com/guiavicar/LP/wiki'
 };

@@ -251,7 +251,7 @@ function App() {
                 GitHub
               </a>
               <a
-                href={projectInfo.repoUrl}
+                href={projectInfo.linkWiki}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="wiki-button"
