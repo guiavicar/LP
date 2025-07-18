@@ -1,59 +1,441 @@
+:root {
+  --bg: #2E3440;
+  --fg: #D8DEE9;
+  --accent: #88C0D0;
+  --accent-hover: #BF616A;
+
+  /* paleta secundária */
+  --accent2: #8FBCBB;
+  --accent2-hover: #dcd337;
+}
+
+/* Estilo base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Elementos principais da página */
 .App {
+  background-image: url("./assets/imagemFundoProjetoLP.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* título da página */
+.container-title {
+  margin-bottom: 3rem;
+  margin-top: -50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #BFFF00;
+  border-radius: 25px;
+}
+
+.title {
+  color: white;
+  font-size: 3rem;
+  margin: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-bottom: 10px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Container dos botões */
+.buttons {
+  display: flex;
+  gap: 40rem;
+}
+
+/* regras base ambos botões principais */
+.btn {
+  width: 200px;
+  height: 200px;
+  border: none;
+  border-radius: 100%;
+  font-size: 1.5rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  background-color: #FF6F61;
+  color: white;
+}
+
+.btn:hover {
+  transform: scale(1.25);
+}
+
+/* overlay */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --------------------
+   Conversion Modal
+   -------------------- */
+.modal-convert {
+  position: relative;
+  width: 90vw;
+  max-width: 80%;
+  height: 90vw;
+  max-height: 80%;
+  padding: 2rem;
+  border-radius: 1rem;
+  background: #f5f5dc;
+  color: var(--fg);
+  overflow-y: auto;
+}
+
+.modal-convert-title {
+  margin-bottom: 1rem;
+  color: grey;
+}
+
+/* Close button */
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  background: transparent;
+  border: none;
+  font-size: 3rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+/* Dropzone */
+.modal-convert .controls-container {
+  width: 100%;
+  min-height: 200px;
+  height: 80%;
+  padding: 2rem;
+  border: 2px dashed var(--accent2);
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 25px;
+  font-size: 1rem;
+  color: grey;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Botão “Copiar” */
+.btn-copy {
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  background: #48BB78;
+  color: #FFF;
+}
+
+.btn-copy:hover:not(:disabled) {
+  background: #38A169;
+}
+
+/* Botão “Limpar” */
+.btn-clear {
+  background: transparent;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  background: transparent;
+  border: 1px solid #F56565;
+  color: #F56565;
+}
+
+.btn-clear i.material-icons {
+  margin-left: 0.5rem;
+}
+
+.btn-clear:hover {
+  background: var(--accent-hover);
+  color: var(--bg);
+  transform: scale(1.05);
+}
+
+/* Botão “Converter” */
+.btn-convert {
+  background: var(--accent);
+  color: var(--bg);
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.btn-convert i.material-icons {
+  margin-left: 0.5rem;
+}
+
+.btn-clear:disabled,
+.btn-action:disabled,
+.btn-copy:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* saída ASCII */
+.ascii-output {
+  margin-top: 1rem;
+  background: #3B4252;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-align: left;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.ascii-container {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  background-color: #000;
+  border: 1px solid #555;
+  border-radius: 8px;
+  overflow: auto;
+  text-align: left;
+}
+
+.ascii-container pre {
+  color: #E0E0E0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  line-height: 0.9;
+  padding: 1rem;
+}
+
+/* --------------------
+   Info Modal
+   -------------------- */
+.modal.info {
+  width: 90vw;
+  max-width: 600px;
+  height: 80vh;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background-color: var(--accent);
+}
+
+/* Titulo modal info */
+.modal-info-title {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: var(--fg);
+}
+
+/* Conteudo modal info */
+.info-content {
+  height: calc(80vh - 3.5rem - 56px);
+  overflow-y: auto;
+  text-align: justify;
+  line-height: 1.4;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 1rem;
+  color: black;
+}
+
+.modal.info .info-content {
+  line-height: 1.4;
+}
+
+.info-content p {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+/* Video modal info */
+.info-video {
+  border-radius: 10px;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+/* bloco do CTA centralizado */
+.info-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* botão git */
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 4rem;
+  border-radius: 4px;
+  background: var(--accent-color, #004cff);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.1s ease, opacity 0.15s;
+}
+
+.cta-button:hover {
+  transform: scale(1.04);
+  opacity: 0.9;
+}
+
+/* Scroll modal informativa */
+.info-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.info-content::-webkit-scrollbar-thumb {
+  background: rgb(60, 58, 58);
+  border-radius: 3px;
+}
+
+.slider {
+  width: 80%;
+  max-width: 400px;
+}
+
+.result-area {
+  margin: 1.5rem 0;
+  width: 100%;
+}
+
+.controls-area {
+  margin: 30px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px;
+}
+
+.control-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: grey;
+  font-weight: bold;
+}
+
+.content-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rem;
+  flex: 1;
+  width: 100%;
+}
+
+/* --------------------
+   Footer
+   -------------------- */
+.footer {
+  bottom: 0;
+  width: 100%;
+  padding: 20px 0;
+  background: rgba(46, 52, 64, 0.8);
+  color: var(--fg);
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.participants {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
+.participant {
+  display: flex;
+  flex-direction: column;
+}
+
+.participant .name {
+  font-weight: bold;
+}
+
+.participant .matricula {
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.repo-link a {
+  color: var(--accent2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.repo-link a:hover {
+  color: var(--accent2-hover);
+  text-decoration: none;
+}
+
+/* Demais... */
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-.ascii-container {
-  width: 90%;
-  max-width: 1400px;
-  margin: 20px auto;
-  background-color: #1c1c1c;
-  border: 1px solid #444;
-  border-radius: 8px;
-
-  overflow-x: auto;
-}
-
-.ascii-container pre {
-  font-size: 8px;
-  line-height: 0.9;
-  letter-spacing: 0.1px;
-
-  font-family: 'Courier New', Courier, monospace;
-
-  margin: 0;
-  padding: 1rem;
-}
-
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
